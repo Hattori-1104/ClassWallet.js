@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import _Api from './api'
-import { Result } from "./result"
+import { Result } from '../modules/types/result';
 
 interface User {
   email: string;

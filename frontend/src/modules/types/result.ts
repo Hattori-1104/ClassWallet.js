@@ -10,4 +10,4 @@ type ErrorResult = {
   type: 'error';
   error?: Error | SimpleError;
 }
-export type Result<T = any> = SuccessResult<T> | ErrorResult
+export type Result<T = undefined> = SuccessResult<T> | ErrorResult

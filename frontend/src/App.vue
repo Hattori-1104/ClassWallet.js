@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import NavigationBar from "./components/NavigationBar.vue";
 import UserVerification from "./components/UserVerification.vue";
+
+
 </script>
 
 <template>
