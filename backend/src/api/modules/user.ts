@@ -129,7 +129,7 @@ async function checkExistance(user_identifier: string): Promise<Result<{existanc
   }
 }
 
-// 認証
+// 識別子 + パスワードハッシュで認証
 async function verify(user_identifier: string, password_hash: string): Promise<Result<{verified: boolean}>> {
   let query: string;
   let param: object;
@@ -156,6 +156,31 @@ async function verify(user_identifier: string, password_hash: string): Promise<R
   }
 }
 
+// トークン + IDで認証
+async function verifyByToken(id: number, token: string): Promise<Result<{verified: boolean}>> {
+  let res = await getPasswordHashByID(id)
+  if (res.type === "error") return res
+  const password_hash = res.payload?.password_hash
+  // idをpassword_hashを鍵として暗号化
+  // フロントエンド・バックエンド共に暗号化(sha-256)のメソッドを作る
+}
+
+// パスワードハッシュをIDで取得
+async function getPasswordHashByID(id: number): Promise<Result<{password_hash: string}>> {
+  const query = `SELECT password_hash FROM ${TABLE} WHERE id = :id LIMIT 1`
+  const param = { id: id }
+  try {
+    // パスワードハッシュのみ返されるデータセット
+    interface UserPasswordHash extends RowDataPacket { password_hash: string }
+    const [results, fields]: [UserPasswordHash[], FieldPacket[]] = await con.execute<UserPasswordHash[]>(query, param)
+    if (results.length === 0) throw { message: "invalid user id" }
+    return { type: "success", payload: { password_hash: results[0].password_hash } }
+  } catch ( err: any ) {
+    return { type: "error", "error": err }
+  }
+  
+}
+
 // メールアドレスまたはユーザータグからユーザーIDを取得
 // ユーザーの存在はすでに確認できている前提で実行される
 async function getUserID(user_identifier: string): Promise<Result<{id: number}>> {
@@ -176,9 +201,9 @@ async function getUserID(user_identifier: string): Promise<Result<{id: number}>>
     return { type: "error", error: { message: "invalid user identifier" } }
   }
   try {
-    // ユーザーのIDのみのデータセットを返す
+    // ユーザーIDのみのデータセットを返す
     interface UserID extends RowDataPacket { id: number }
-    const [results, fields]: [UserID[], FieldPacket[]] = await con.execute<(UserID)[]>(query, param)
+    const [results, fields]: [UserID[], FieldPacket[]] = await con.execute<UserID[]>(query, param)
     if (results.length === 0) throw { message: "invalid user identifier" }
     return { type: "success", payload: {id: results[0].id}} 
   } catch (err: any) {
