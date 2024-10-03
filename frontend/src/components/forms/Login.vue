@@ -3,6 +3,7 @@ import FormInput from './Input.vue';
 import { ref } from "vue"
 import { z } from "zod"
 import { EmitFormInput } from '../../modules/types/form';
+import Api from '../../api/methods';
 
 const userId_schema = { parse: (value: string) => {
   if (value[0] == "@") return z.string()
@@ -37,12 +38,30 @@ const onUpdatePassword = (e: EmitFormInput) => {
   if (e.valid) passwordValue.value = e.value
 }
 
-const onSubmit = () => {
+const onSubmit = async () => {
   if (!(isPasswordValid.value && isUserIdValid.value)) {
-    alert("ログインできません。")
+    console.log("ログインできません")
     return
   }
-  else console.log("ログインしました")
+  let res = await Api.checkUserExistance(userIdValue.value)
+  if (res.data.type === "error") {
+    console.log("データベースエラー")
+    return
+  }
+  if (res.data.payload?.existance) {
+    let res = await Api.verifyUser(userIdValue.value, passwordValue.value)
+    if (res.data.type === "error") {
+      console.log("データベースエラー")
+      return
+    }
+    if (res.data.payload?.verified) {
+      console.log("ログイン可能")
+    } else {
+      console.log("ログイン不可能")
+    }
+  } else {
+    console.log("ユーザーが存在しません")
+  }
 }
 </script>
 

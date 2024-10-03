@@ -103,7 +103,7 @@ async function _delete(user_identifier: string): Promise<Result> {
 }
 
 // 存在の確認
-async function checkExistance(user_identifier: string): Promise<Result> {
+async function checkExistance(user_identifier: string): Promise<Result<{existance: boolean}>> {
   let query: string;
   let param: object;
   // メールアドレスの場合
@@ -130,7 +130,7 @@ async function checkExistance(user_identifier: string): Promise<Result> {
 }
 
 // 認証
-async function verify(user_identifier: string, password_hash: string): Promise<Result> {
+async function verify(user_identifier: string, password_hash: string): Promise<Result<{verified: boolean}>> {
   let query: string;
   let param: object;
   // メールアドレスの場合
@@ -150,7 +150,7 @@ async function verify(user_identifier: string, password_hash: string): Promise<R
   try {
     interface Existance extends RowDataPacket {string: number}
     const [results, fields]: [Existance[], FieldPacket[]] = await con.execute<Existance[]>(query, param)
-    return { type: "success", payload: { verify: Boolean(results.length) } }
+    return { type: "success", payload: { verified: Boolean(results.length) } }
   } catch (err: any) {
     return { type: "error", error: err }
   }

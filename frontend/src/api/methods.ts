@@ -25,7 +25,7 @@ async function deleteUser(user_identifier: string): Promise<AxiosResponse<Result
 async function checkUserExistance(user_identifier: string): Promise<AxiosResponse<Result<{existance: boolean}>>> {
   return await _Api().get(`/api/user/existance/${user_identifier}`)
 }
-async function verifyUser(user_identifier: string, password_hash: string): Promise<AxiosResponse<Result>> {
+async function verifyUser(user_identifier: string, password_hash: string): Promise<AxiosResponse<Result<{verified: boolean}>>> {
   return await _Api().get(`/api/user/verify/${user_identifier}/${password_hash}`)
 }
 
