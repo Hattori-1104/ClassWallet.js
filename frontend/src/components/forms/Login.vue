@@ -5,6 +5,7 @@ import { z } from "zod"
 import { EmitFormInput } from '../../modules/types/form';
 import Api from '../../api/methods';
 
+// スキーマ
 const userId_schema = { parse: (value: string) => {
   if (value[0] == "@") return z.string()
     .regex(/^[\u0021-\u007e]*$/u, { message: "半角英数記号を使用してください" })
@@ -24,6 +25,7 @@ const password_schema = z.string()
   .min(4, { message: "4文字以上入力してください" })
   .max(50, { message: "50文字以内で入力してください" })
 
+// ハンドラ
 const isUserIdValid = ref<boolean>(false)
 const userIdValue = ref<string>("")
 const onUpdateUserId = (e: EmitFormInput) => {
@@ -38,6 +40,7 @@ const onUpdatePassword = (e: EmitFormInput) => {
   if (e.valid) passwordValue.value = e.value
 }
 
+// サブミット
 const onSubmit = async () => {
   if (!(isPasswordValid.value && isUserIdValid.value)) {
     console.log("ログインできません")
@@ -48,13 +51,13 @@ const onSubmit = async () => {
     console.log("データベースエラー")
     return
   }
-  if (res.data.payload?.existance) {
+  if (res.data.payload.existance) {
     let res = await Api.verifyUser(userIdValue.value, passwordValue.value)
     if (res.data.type === "error") {
       console.log("データベースエラー")
       return
     }
-    if (res.data.payload?.verified) {
+    if (res.data.payload.verified) {
       console.log("ログイン可能")
     } else {
       console.log("ログイン不可能")

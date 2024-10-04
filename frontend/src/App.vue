@@ -50,6 +50,9 @@ import UserVerification from "./components/UserVerification.vue";
   background-color: #fff;
   padding: 20px;
   margin-bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .content > * {

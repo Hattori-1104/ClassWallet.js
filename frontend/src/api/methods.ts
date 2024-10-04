@@ -5,9 +5,8 @@ import { Result } from '../modules/types/result';
 interface User {
   email: string;
   tag: string;
-  display_name: string;
+  name: string;
   password_hash: string;
-  authorized: boolean;
 }
 
 async function getUserAll(): Promise<AxiosResponse<Result<User[]>>> {
@@ -16,10 +15,10 @@ async function getUserAll(): Promise<AxiosResponse<Result<User[]>>> {
 async function getUser(user_identifier: string): Promise<AxiosResponse<Result<User>>> {
   return await _Api().get(`/api/user/${user_identifier}`)
 }
-async function registerUser(user_data: User): Promise<AxiosResponse<Result>> {
+async function registerUser(user_data: User): Promise<AxiosResponse<Result<{id: number}>>> {
   return await _Api().post("/api/user", user_data)
 }
-async function deleteUser(user_identifier: string): Promise<AxiosResponse<Result>> {
+async function deleteUser(user_identifier: string): Promise<AxiosResponse<Result<undefined>>> {
   return await _Api().delete(`/api/user/${user_identifier}`)
 }
 async function checkUserExistance(user_identifier: string): Promise<AxiosResponse<Result<{existance: boolean}>>> {
