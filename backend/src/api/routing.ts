@@ -19,6 +19,7 @@ user_api.delete("/:user_identifier", async (c) => c.json(await user._delete(c.re
 user_api.get("/existance/:user_identifier", async (c) => c.json(await user.checkExistance(c.req.param("user_identifier"))))
 user_api.get("/verify/:user_identifier/:password_hash", async (c) => c.json(await user.verify(c.req.param("user_identifier"), c.req.param("password_hash"))))
 user_api.get("/get_id/:user_identifier", async (c) => c.json(await user.getUserID(c.req.param("user_identifier"))))
+user_api.get("/verify_by_token/:user_id/:token", async (c) => c.json(await user.verifyByToken(c.req.param("user_id"), c.req.param("token"))))
 
 // ルーティングをさらにまとめる
 api.route("/user", user_api)

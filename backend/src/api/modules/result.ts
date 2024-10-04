@@ -1,7 +1,7 @@
 
 type SuccessResult<T> = {
   type: 'success';
-  payload?: T;
+  payload: T;
 }
 type SimpleError = {
   message: string;
@@ -10,4 +10,4 @@ type ErrorResult = {
   type: 'error';
   error?: Error | SimpleError;
 }
-export type Result<T = undefined> = SuccessResult<T> | ErrorResult
+export type Result<T> = SuccessResult<T> | ErrorResult

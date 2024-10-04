@@ -2,7 +2,8 @@ import "dotenv/config"
 import con from "./db_connection"
 import { Result } from "./result"
 import { FieldPacket, QueryResult, ResultSetHeader, RowDataPacket } from "mysql2";
-import { z } from "zod"
+import { tuple, z } from "zod"
+import { createHmac } from "node:crypto";
 
 // クエリによって返される
 interface User extends RowDataPacket{
@@ -60,21 +61,23 @@ async function get(user_identifier: string): Promise<Result<User>> {
 }
 
 // 登録
-async function register(user_data: User): Promise<Result> {
+async function register(user_data: User): Promise<Result<{id: number}>> {
   const query = `INSERT INTO ${TABLE} VALUES (NULL, :email, :tag, :display_name, :password_hash)`
   const param = user_data
   try {
-    const [results, fields]: [ResultSetHeader, FieldPacket[]] = await con.execute(query, param);
-
+    await con.execute(query, param);
+    let res = await getUserID(user_data.email)
+    if (res.type === "error") throw res.error
+    const id = res.payload.id
     // ユーザーidを返す
-    return { type: "success" }
+    return { type: "success", payload: { id: id } }
   } catch (err: any) {
     return { type: "error", error: err }
   }
 }
 
 // 削除
-async function _delete(user_identifier: string): Promise<Result> {
+async function _delete(user_identifier: string): Promise<Result<undefined>> {
   let query: string;
   let param: object;
   // メールアドレスの場合
@@ -96,7 +99,7 @@ async function _delete(user_identifier: string): Promise<Result> {
     const [results, fields]: [ResultSetHeader, FieldPacket[]] = await con.execute(query, param);
     // クエリの成功・失敗のみ返す
     if (results.affectedRows == 0) throw { message: "requested user does not exists" }
-    return { type: "success" }
+    return { type: "success", payload: undefined }
   } catch (err: any) {
     return { type: "error", error: err }
   }
@@ -157,16 +160,18 @@ async function verify(user_identifier: string, password_hash: string): Promise<R
 }
 
 // トークン + IDで認証
-async function verifyByToken(id: number, token: string): Promise<Result<{verified: boolean}>> {
+async function verifyByToken(id: number | string, token: string): Promise<Result<{verified: boolean}>> {
+  // if (typeof id === "string") id = Number(id)
   let res = await getPasswordHashByID(id)
   if (res.type === "error") return res
-  const password_hash = res.payload?.password_hash
-  // idをpassword_hashを鍵として暗号化
-  // フロントエンド・バックエンド共に暗号化(sha-256)のメソッドを作る
+  const password_hash = res.payload.password_hash
+  const generated_token = createHmac("sha256", password_hash).update(`${id}`).digest("hex")
+  if (generated_token === token) return { type: "success", payload: { verified: true }}
+  else return { type: "error", error: { message: "invalid token" }}
 }
-
+// 13c779faa1efb6845af350f158c9f53203b21e8688204011087c5d037dc3caac
 // パスワードハッシュをIDで取得
-async function getPasswordHashByID(id: number): Promise<Result<{password_hash: string}>> {
+async function getPasswordHashByID(id: number | string): Promise<Result<{password_hash: string}>> {
   const query = `SELECT password_hash FROM ${TABLE} WHERE id = :id LIMIT 1`
   const param = { id: id }
   try {
@@ -211,4 +216,4 @@ async function getUserID(user_identifier: string): Promise<Result<{id: number}>>
   }
 }
 
-export default { getAll, get, register, _delete, checkExistance, verify, getUserID }
+export default { getAll, get, register, _delete, checkExistance, verify, getUserID, verifyByToken }
