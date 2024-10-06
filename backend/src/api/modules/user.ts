@@ -1,5 +1,5 @@
 import "dotenv/config"
-import con from "./db_connection"
+import con from "./database_connection"
 import { Result } from "./result"
 import { FieldPacket, QueryResult, ResultSetHeader, RowDataPacket } from "mysql2";
 import { tuple, z } from "zod"
@@ -65,12 +65,10 @@ async function register(user_data: User): Promise<Result<{id: number}>> {
   const query = `INSERT INTO ${TABLE} VALUES (NULL, :email, :tag, :display_name, :password_hash)`
   const param = user_data
   try {
-    await con.execute(query, param);
-    let res = await getUserID(user_data.email)
-    if (res.type === "error") throw res.error
-    const id = res.payload.id
+    const [results, fields]: [ResultSetHeader, FieldPacket[]] = await con.execute(query, param)
+    const id = results.insertId
     // ユーザーidを返す
-    return { type: "success", payload: { id: id } }
+    return { type: "success", payload: { id } }
   } catch (err: any) {
     return { type: "error", error: err }
   }
