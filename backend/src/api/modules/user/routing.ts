@@ -1,6 +1,6 @@
 import { Hono } from "hono"
 import * as Methods from "./methods"
-import { RequestUser, RequestUserSchema } from "./types"
+import { PasswordHashSchema, RequestUser, RequestUserSchema, UserIdentifierSchema } from "./types"
 
 const api = new Hono()
 
@@ -19,5 +19,14 @@ api.post('/register', async (c) => {
   let result = await Methods.register(user_data as RequestUser)
   return c.json(result, result.type == "success" ? 200 : 400)
 })
+
+api.get('verify/password/:user_identifier/:password_hash', async (c) => {
+  let password_hash = c.req.param("password_hash")
+  let user_identifier = c.req.param("user_identifier")
+  if (!PasswordHashSchema.safeParse(password_hash).success || !UserIdentifierSchema.safeParse(user_identifier).success) return c.json({ type: "error", error: { code: "invalid_request", message: "Malformed request" }}, 400)
+  let result = await Methods.verifyByPassword(user_identifier, password_hash)
+  return c.json(result, result.type == "success" ? 200 : 400)
+})
+
 
 export default api

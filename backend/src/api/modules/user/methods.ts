@@ -33,19 +33,16 @@ async function verifyByPassword(user_identifier: RequestUser["email" | "tag"], p
     return { type: "error", error: { code: "invalid_request", message: "Malformed request" }}
   }
   // クエリ文
-  const query = `SELECT 1 FROM ${TABLE} WHERE ${identifier_type} = :${identifier_type}`
-  const param = { [identifier_type]: user_identifier }
+  const query = `SELECT 1 FROM ${TABLE} WHERE ${identifier_type} = :${identifier_type} AND password_hash = :password_hash`
+  const param = { [identifier_type]: user_identifier, password_hash }
   // クエリ
-  let result: ResultUser
-  let fields: FieldPacket[]
   try {
-    [[result], fields] = await con.execute<ResultUser[]>(query, param)
-    if (!result) return { type: "error", error: { code: "invalid_request", message: "The requested user does not exist" }}
+    const [results, fields]: [({ '1': 1 } & RowDataPacket)[], FieldPacket[]] = await con.execute(query, param)
+    console.log(results)
+    return { type: "success", payload: { verified: Boolean(results.length) }}
   } catch (err: any) {
     return { type: "error", error: { code: "database_error", message: err.message }}
   }
-  // 認証
-  // ここから
 }
 
 

@@ -4,8 +4,10 @@ import { z } from "zod"
 const EmailSchema = z.string().min(10).max(200).email()
 const TagSchema = z.string().min(2).max(100).startsWith("@").regex(/^@[0-9a-zA-Z_]+$/)
 const NameSchema = z.string().min(1).max(100)
-const PasswordHashSchema = z.string().length(64)
-const PasswordSaltScheam = z.string().length(8)
+const PasswordHashSchema = z.string().length(64).regex(/^[0-9a-f]+$/)
+const PasswordSaltSchema = z.string().length(8).regex(/^[0-9a-f]+$/)
+
+const UserIdentifierSchema = z.union([EmailSchema, TagSchema])
 
 const ResultUserSchema = z.object({
   id: z.number(),
@@ -13,7 +15,7 @@ const ResultUserSchema = z.object({
   tag: TagSchema,
   name: NameSchema,
   password_hash: PasswordHashSchema,
-  password_salt: PasswordSaltScheam,
+  password_salt: PasswordSaltSchema,
   updated_at: z.number()
 })
 
@@ -22,7 +24,7 @@ const RequestUserSchema = z.object({
   tag: TagSchema,
   name: NameSchema,
   password_hash: PasswordHashSchema,
-  password_salt: PasswordSaltScheam,
+  password_salt: PasswordSaltSchema,
 })
 
 interface ResultUser extends RowDataPacket {
@@ -40,5 +42,5 @@ type RequestUser = z.infer<typeof RequestUserSchema>
 export {
   ResultUser, RequestUser,
   ResultUserSchema, RequestUserSchema,
-  EmailSchema, TagSchema, NameSchema, PasswordHashSchema, PasswordSaltScheam
+  EmailSchema, TagSchema, NameSchema, PasswordHashSchema, PasswordSaltSchema, UserIdentifierSchema
 }
