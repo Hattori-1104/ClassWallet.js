@@ -9,7 +9,7 @@ const PasswordSaltSchema = z.string().length(8).regex(/^[0-9a-f]+$/)
 
 const UserIdentifierSchema = z.union([EmailSchema, TagSchema])
 
-const ResultUserSchema = z.object({
+const UserSchema = z.object({
   id: z.number(),
   email: EmailSchema,
   tag: TagSchema,
@@ -27,7 +27,7 @@ const RequestUserSchema = z.object({
   password_salt: PasswordSaltSchema,
 })
 
-interface ResultUser extends RowDataPacket {
+interface User extends RowDataPacket {
   id: number,
   email: string,
   tag: string,
@@ -40,7 +40,7 @@ interface ResultUser extends RowDataPacket {
 type RequestUser = z.infer<typeof RequestUserSchema>
 
 export {
-  ResultUser, RequestUser,
-  ResultUserSchema, RequestUserSchema,
+  User, RequestUser,
+  UserSchema, RequestUserSchema,
   EmailSchema, TagSchema, NameSchema, PasswordHashSchema, PasswordSaltSchema, UserIdentifierSchema
 }
