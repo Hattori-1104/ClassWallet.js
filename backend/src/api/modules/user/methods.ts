@@ -1,13 +1,16 @@
 import { FieldPacket, ResultSetHeader, RowDataPacket } from "mysql2"
 import con from "../database_connection"
 import { MethodResult } from "../result"
-import { EmailSchema, RequestUser, TagSchema, User } from "./types"
+import { EmailSchema, RequestUser, SessionUser, SessionUserSchema, TagSchema, User } from "./types"
 import * as jwt from "hono/jwt"
 import { JWTPayload } from "hono/utils/jwt/types"
 import { SignatureKey } from "hono/utils/jwt/jws"
 import "dotenv/config"
+import { TokenHeader } from "hono/utils/jwt/jwt"
+import { tuple } from "zod"
 
 const TABLE = "users"
+const SECRET_KEY: SignatureKey = process.env.SECRET_KEY as string
 
 // 登録
 async function register(user_data: RequestUser): Promise<MethodResult<{id: number}>> {
@@ -41,7 +44,6 @@ async function verifyByPassword(user_identifier: User["email" | "tag"], password
   // クエリ
   try {
     const [[result], fields]: [({ '1': 1 } & RowDataPacket)[], FieldPacket[]] = await con.execute(query, param)
-    console.log(result)
     return { type: "success", payload: { verified: Boolean(result) }}
   } catch (err: any) {
     return { type: "error", error: { code: "database_error", message: err.message }}
@@ -64,9 +66,46 @@ async function genToken(id: User["id"]): Promise<MethodResult<{token: string}>> 
   }
   // トークンの発行
   const validity_time = 24 * 60 * 60
-  const payload: JWTPayload = { id, ...result, updated_at: Math.floor(Date.now() / 1000,), validity_time }
-  const secret_key: SignatureKey = process.env.SECRET_KEY as string
-  return { type: "success", payload: { token: await jwt.sign(payload, secret_key) }}
+  // const validity_time = 10
+  const payload: SessionUser & JWTPayload = { id, ...result, updated_at: Math.floor(Date.now() / 1000,), validity_time }
+  return { type: "success", payload: { token: await jwt.sign(payload, SECRET_KEY) }}
 }
 
-export { register, verifyByPassword, genToken }
+async function verifyByToken(token: string): Promise<MethodResult<{verified: true} | {verifed: false, message: string}>> {
+  // 秘密鍵で認証
+  try {
+    await jwt.verify(token, SECRET_KEY)
+  } catch (err: any) {
+    return { type: "error", error: { code: "invalid_signature", message: "Invalid signature" } }
+  }
+  
+  const {header, payload} = jwt.decode(token)
+  // ペイロードをユーザーセッション情報へ
+  let session: SessionUser
+  try {
+    session = SessionUserSchema.parse(payload)
+  } catch (err: any) {
+    return { type: "error", error: { code: "invalid_payload_format", message: "Invalid payload format" }}
+  }
+  // 有効期限の確認
+  const nowDateTime = Math.floor(Date.now() / 1000)
+  // 有効期限の範囲外
+  if (!(session.updated_at <= nowDateTime && nowDateTime < (session.updated_at + session.validity_time))) return { type: "success", payload: { verifed: false, message: "Token has expired" } }
+  // クエリ
+  const query = `SELECT email, tag, name, updated_at FROM users WHERE id = :id`
+  const param = { id: session.id }
+  
+  let result: ({ email: User["email"], tag: User["tag"], name: User["name"], updated_at: User["updated_at"] } & RowDataPacket)
+  let fields: FieldPacket[]
+  try {
+    [[result], fields] = await con.execute(query, param)
+    if (!result) return { type: "error", error: { code: "invalid_request", message: "The user does not exist"}}
+  } catch (err: any) {
+    return { type: "error", error: { code: "database_error", message: err.message }}
+  }
+  // セッションとデータベースをデータと比較
+  if (session.updated_at < result.updated_at) return { type: "success", payload: { verifed: false, message: "Token is out of date" }}
+  return { type: "success", payload: { verified: true }}
+}
+
+export { register, verifyByPassword, genToken, verifyByToken }

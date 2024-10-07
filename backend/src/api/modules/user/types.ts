@@ -37,10 +37,20 @@ interface User extends RowDataPacket {
   updated_at: number,
 }
 
+const SessionUserSchema = z.object({
+  id: z.number(),
+  email: EmailSchema,
+  tag: TagSchema,
+  name: NameSchema,
+  updated_at: z.number(),
+  validity_time: z.number()
+})
+type SessionUser = z.infer<typeof SessionUserSchema>
+
 type RequestUser = z.infer<typeof RequestUserSchema>
 
 export {
-  User, RequestUser,
-  UserSchema, RequestUserSchema,
+  User, RequestUser, SessionUser,
+  UserSchema, RequestUserSchema, SessionUserSchema,
   EmailSchema, TagSchema, NameSchema, PasswordHashSchema, PasswordSaltSchema, UserIdentifierSchema
 }

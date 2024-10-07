@@ -28,6 +28,12 @@ api.get('verify/password/:user_identifier/:password_hash', async (c) => {
   return c.json(result, result.type == "success" ? 200 : 400)
 })
 
+api.get('verify/token/:token', async (c) => {
+  let token = c.req.param("token")
+  let result = await Methods.verifyByToken(token)
+  return c.json(result, result.type == "success" ? 200 : 400)
+})
+
 api.get('gen_token/:id', async (c) => {
   let id = Number(c.req.param("id"))
   let result = await Methods.genToken(id)
